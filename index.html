@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prism</title>
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body class="dark">
+    <div id="app">
+      <!-- Toolbar -->
+      <header id="toolbar">
+        <div class="toolbar-left">
+          <button id="btn-open" title="打开文件 (Cmd+O)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M2 3h5l1.5 1.5H14v9.5H2V3z"
+                stroke="currentColor"
+                stroke-width="1.2"
+                fill="none"
+              />
+            </svg>
+            <span>打开</span>
+          </button>
+          <div id="file-name-wrap" class="file-name-wrap hidden">
+            <span id="file-name" class="file-name">未打开文件</span>
+            <button id="btn-recent" class="btn-recent" title="最近文件">
+              <svg width="8" height="5" viewBox="0 0 8 5" fill="none">
+                <path
+                  d="M1 1l3 3 3-3"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+            <div id="recent-dropdown" class="recent-dropdown hidden"></div>
+          </div>
+        </div>
+        <div class="toolbar-center">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3" />
+              <path
+                d="M11 11l3.5 3.5"
+                stroke="currentColor"
+                stroke-width="1.3"
+                stroke-linecap="round"
+              />
+            </svg>
+            <input type="text" id="search-input" placeholder="搜索 (Cmd+F)" />
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button id="btn-playground" title="粘贴测试 JSON/Markdown">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect
+                x="2"
+                y="3"
+                width="12"
+                height="10"
+                rx="1.5"
+                stroke="currentColor"
+                stroke-width="1.2"
+                fill="none"
+              />
+              <path
+                d="M5 6l2 2-2 2M9 10h2"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Playground</span>
+          </button>
+          <button id="btn-settings" title="字段映射设置">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="3.5" cy="5" r="1.5" stroke="currentColor" stroke-width="1.2" />
+              <path d="M5 5h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+              <circle cx="8" cy="8" r="1.5" stroke="currentColor" stroke-width="1.2" />
+              <path
+                d="M2 8h6.5M9.5 8H14"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+              />
+              <circle cx="12.5" cy="11" r="1.5" stroke="currentColor" stroke-width="1.2" />
+              <path d="M2 11h9.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </button>
+          <button id="btn-theme" title="切换主题 (T)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="4" stroke="currentColor" stroke-width="1.2" />
+              <path
+                d="M8 1v2M8 13v2M1 8h2M13 8h2"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main content -->
+      <main id="main-content">
+        <!-- Sidebar: entry list -->
+        <aside id="sidebar">
+          <div class="sidebar-header">
+            <span id="entry-count">0 条记录</span>
+          </div>
+          <div id="entry-list" class="entry-list"></div>
+        </aside>
+
+        <!-- Resizer -->
+        <div class="resizer" id="resizer-left"></div>
+
+        <!-- Center panel -->
+        <section id="center-panel">
+          <div class="panel-tabs">
+            <div class="panel-tabs-left">
+              <button class="tab-btn active" data-tab="json">JSON</button>
+              <button class="tab-btn" data-tab="chat">对话</button>
+              <button class="tab-btn" data-tab="raw">原始</button>
+            </div>
+            <div class="panel-tabs-right">
+              <button id="btn-prev" class="tab-nav-btn" title="上一条 (↑)" disabled>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M10 12L6 8l4-4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+              <span id="entry-nav-pos" class="entry-nav-pos">- / -</span>
+              <button id="btn-next" class="tab-nav-btn" title="下一条 (↓)" disabled>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M6 4l4 4-4 4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div id="tab-content" class="tab-content">
+            <div id="view-json" class="view active"></div>
+            <div id="view-chat" class="view"></div>
+            <div id="view-raw" class="view"></div>
+          </div>
+        </section>
+
+        <!-- Resizer -->
+        <div class="resizer" id="resizer-right"></div>
+
+        <!-- Right panel: Markdown preview -->
+        <section id="preview-panel">
+          <div class="panel-tabs">
+            <button class="tab-btn active" data-tab="rendered">渲染</button>
+            <button class="tab-btn" data-tab="source">源码</button>
+          </div>
+          <div class="tab-content">
+            <div id="view-rendered" class="view active"></div>
+            <div id="view-source" class="view"></div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Playground -->
+      <div id="playground-panel" class="hidden"></div>
+
+      <!-- Status bar -->
+      <footer id="statusbar">
+        <span id="status-entry">就绪</span>
+        <span id="status-size"></span>
+        <span id="status-messages"></span>
+        <span id="status-chars"></span>
+      </footer>
+
+      <!-- Welcome screen overlay -->
+      <div id="welcome-screen">
+        <div class="welcome-content">
+          <div class="welcome-icon">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+              <rect
+                x="8"
+                y="8"
+                width="48"
+                height="48"
+                rx="8"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M20 24h24M20 32h18M20 40h12"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </div>
+          <h1>Prism</h1>
+          <p>打开 .jsonl 文件以查看格式化 JSON 和 Markdown 预览</p>
+          <button id="btn-welcome-open">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M2 3h5l1.5 1.5H14v9.5H2V3z"
+                stroke="currentColor"
+                stroke-width="1.2"
+                fill="none"
+              />
+            </svg>
+            选择文件
+          </button>
+          <p class="hint">或将 .jsonl 文件拖拽到此窗口</p>
+        </div>
+        <div id="recent-files" class="recent-files hidden">
+          <div class="recent-files-title">最近打开</div>
+          <div id="recent-files-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>字段映射设置</h3>
+        <p class="modal-desc">
+          不同 JSONL 格式使用的字段名不同，此处定义映射关系，修改后下次打开文件生效。
+        </p>
+
+        <div class="form-group">
+          <label>数据格式</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="format" value="chat" checked />
+              <span>对话格式</span>
+              <em class="radio-hint">{messages: [{role, content}]}</em>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="format" value="prompt" />
+              <span>提示词格式</span>
+              <em class="radio-hint">{prompt, result}</em>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="set-task-id">task_id 字段名</label>
+          <input type="text" id="set-task-id" value="task_id" spellcheck="false" />
+        </div>
+
+        <div class="form-group field-chat">
+          <label for="set-messages">messages 字段名</label>
+          <input type="text" id="set-messages" value="messages" spellcheck="false" />
+        </div>
+
+        <div class="form-group field-prompt hidden">
+          <label for="set-prompt">prompt 字段名</label>
+          <input type="text" id="set-prompt" value="prompt" spellcheck="false" />
+        </div>
+
+        <div class="form-group field-prompt hidden">
+          <label for="set-result">result 字段名</label>
+          <input type="text" id="set-result" value="result" spellcheck="false" />
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-save-settings" class="btn-primary">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
