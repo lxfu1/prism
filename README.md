@@ -1,8 +1,3 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="">
-  <img alt="Prism" src="" width="520">
-</picture>
-
 <h3 align="center">一个桌面端的 JSONL 数据浏览器</h3>
 
 <p align="center">
@@ -13,6 +8,11 @@
   <a href="#安装"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue" alt="Platform"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
 </p>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="">
+  <img width="3338" alt="image" src="https://github.com/user-attachments/assets/7f97cd89-3fa9-4037-851e-8ce317541158" />
+</picture>
 
 ---
 
