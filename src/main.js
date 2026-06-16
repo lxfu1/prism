@@ -11,7 +11,13 @@ import {
   scrollToEntry,
   getFilteredEntries,
 } from './components/sidebar.js';
-import { state, normalizeEntry, resetRenderedTabs, markTabRendered, isTabRendered } from './utils/state.js';
+import {
+  state,
+  normalizeEntry,
+  resetRenderedTabs,
+  markTabRendered,
+  isTabRendered,
+} from './utils/state.js';
 import { initResizers } from './utils/resizer.js';
 import { initTheme } from './utils/theme.js';
 import { saveMapping, DEFAULT_MAPPING } from './utils/settings.js';
@@ -126,7 +132,14 @@ async function selectEntry(index) {
       totalEntries: state.entries.length,
     });
   } catch (err) {
-    console.error('Failed to load entry:', err, 'offset:', entry.byte_offset, 'length:', entry.byte_length);
+    console.error(
+      'Failed to load entry:',
+      err,
+      'offset:',
+      entry.byte_offset,
+      'length:',
+      entry.byte_length,
+    );
     const viewEl = activeTab && document.getElementById(`view-${activeTab}`);
     if (viewEl) {
       viewEl.innerHTML = `<div style="padding:20px;color:#ef4444;font-size:13px;">
@@ -238,7 +251,9 @@ function initTabs() {
         btn.classList.add('active');
 
         if (tabBar.closest('#center-panel')) {
-          document.querySelectorAll('#tab-content .view').forEach((v) => v.classList.remove('active'));
+          document
+            .querySelectorAll('#tab-content .view')
+            .forEach((v) => v.classList.remove('active'));
           const target = document.getElementById(`view-${tab}`);
           if (target) {
             target.classList.add('active');
@@ -247,7 +262,9 @@ function initTabs() {
         }
 
         if (tabBar.closest('#preview-panel')) {
-          document.querySelectorAll('#preview-panel .view').forEach((v) => v.classList.remove('active'));
+          document
+            .querySelectorAll('#preview-panel .view')
+            .forEach((v) => v.classList.remove('active'));
           const target = document.getElementById(`view-${tab}`);
           if (target) {
             target.classList.add('active');
@@ -284,7 +301,12 @@ function initSearch() {
       const query = input.value.trim().toLowerCase();
       renderEntryList(query || null);
 
-      if (query && getFilteredEntries().length === 0 && state.entries.length > 0 && state.filePath) {
+      if (
+        query &&
+        getFilteredEntries().length === 0 &&
+        state.entries.length > 0 &&
+        state.filePath
+      ) {
         try {
           const results = await invoke('search_entries', { query });
           if (results && results.length > 0) {
@@ -429,10 +451,14 @@ function initSettings() {
     const format = document.querySelector('input[name="format"]:checked').value;
     const mapping = {
       format,
-      task_id_field: document.getElementById('set-task-id').value.trim() || DEFAULT_MAPPING.task_id_field,
-      messages_field: document.getElementById('set-messages').value.trim() || DEFAULT_MAPPING.messages_field,
-      prompt_field: document.getElementById('set-prompt').value.trim() || DEFAULT_MAPPING.prompt_field,
-      result_field: document.getElementById('set-result').value.trim() || DEFAULT_MAPPING.result_field,
+      task_id_field:
+        document.getElementById('set-task-id').value.trim() || DEFAULT_MAPPING.task_id_field,
+      messages_field:
+        document.getElementById('set-messages').value.trim() || DEFAULT_MAPPING.messages_field,
+      prompt_field:
+        document.getElementById('set-prompt').value.trim() || DEFAULT_MAPPING.prompt_field,
+      result_field:
+        document.getElementById('set-result').value.trim() || DEFAULT_MAPPING.result_field,
     };
     state.mapping = mapping;
     saveMapping(mapping);
