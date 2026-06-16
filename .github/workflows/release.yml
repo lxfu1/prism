@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -42,18 +45,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Build (macOS / Linux)
-        if: runner.os != 'Windows'
-        run: npx tauri build --target ${{ matrix.target }}
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        continue-on-error: true
-
-      - name: Build (Windows)
-        if: runner.os == 'Windows'
+      - name: Build
         run: npx tauri build --target ${{ matrix.target }}
 
       - name: Upload artifacts
@@ -64,5 +56,5 @@ jobs:
             src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
             src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
             src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
-            src-tauri/target/${{ matrix.target }}/release/bundle/nsi/*.exe
+            src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
           fail_on_unmatched_files: false
