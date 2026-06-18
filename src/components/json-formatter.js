@@ -35,8 +35,9 @@ export class JsonFormatter {
         short: `"${short}`,
         full: `"${escaped}"`,
         hint: `…(${escaped.length} chars)`,
+        raw: value,
       });
-      return `<span class="json-string" id="${id}">"${short}<span class="json-collapsed-hint">…(${escaped.length} chars)</span>"</span><button class="str-expand-btn" data-str-id="${id}">展开</button>`;
+      return `<span class="json-string" id="${id}">"${short}<span class="json-collapsed-hint">…(${escaped.length} chars)</span>"</span><button class="str-expand-btn" data-str-id="${id}">展开</button><button class="str-copy-btn" data-str-id="${id}">复制</button>`;
     }
     return `<span class="json-string">"${escaped}"</span>`;
   }
@@ -99,6 +100,20 @@ export class JsonFormatter {
     }
 
     const handler = (e) => {
+      // String copy
+      const copyBtn = e.target.closest('.str-copy-btn');
+      if (copyBtn) {
+        const id = copyBtn.dataset.strId;
+        const stored = this._stringStore.get(id);
+        if (stored) {
+          navigator.clipboard.writeText(stored.raw).then(() => {
+            copyBtn.textContent = '已复制';
+            setTimeout(() => { copyBtn.textContent = '复制'; }, 1500);
+          });
+        }
+        return;
+      }
+
       // String expand/collapse toggle
       const expandBtn = e.target.closest('.str-expand-btn');
       if (expandBtn) {

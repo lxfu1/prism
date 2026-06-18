@@ -46,12 +46,21 @@ export class Playground {
         this._mode = tab.dataset.mode;
         this._input.placeholder =
           this._mode === 'json' ? '粘贴 JSON 字符串...' : '粘贴 Markdown 内容...';
+        this._output.innerHTML = '';
         this._scheduleRender();
       });
     });
 
-    // Live render on input
+    // Live render on input & paste
     this._input.addEventListener('input', () => this._scheduleRender());
+    this._input.addEventListener('paste', () => {
+      // Paste may not trigger 'input' synchronously in all browsers;
+      // schedule after a microtask so the textarea value is up-to-date.
+      setTimeout(() => this._scheduleRender(), 0);
+    });
+
+    // Initial render
+    this._scheduleRender();
 
     // Resizer
     this._setupResizer(container);
@@ -59,28 +68,15 @@ export class Playground {
 
   _setupResizer(container) {
     const resizer = container.querySelector('#playground-resizer');
-    const left = container.querySelector('.playground-input-wrap');
-    const right = container.querySelector('.playground-output');
-    if (!resizer || !left || !right) return;
+    const first = container.querySelector('.playground-input-wrap');
+    const second = container.querySelector('.playground-output');
+    if (!resizer || !first || !second) return;
 
-    let leftRatio = null;
-    const body = container.querySelector('.playground-body');
-
-    function applyRatio() {
-      if (leftRatio === null) return;
-      const total = body.getBoundingClientRect().width;
-      const resizerW = resizer.getBoundingClientRect().width;
-      const available = total - resizerW;
-      const newLeft = Math.max(240, available * leftRatio);
-      const newRight = Math.max(240, available - newLeft);
-      left.style.flex = `0 0 ${newLeft}px`;
-      right.style.flex = `0 0 ${newRight}px`;
-    }
-
-    const resizeHandler = () => applyRatio();
+    const resizeHandler = () => {
+      first.style.flex = '';
+      second.style.flex = '';
+    };
     window.addEventListener('resize', resizeHandler);
-
-    // Store the handler ref so we can clean up later if needed
     this._pgResizeHandler = resizeHandler;
 
     let startX, startLeftWidth, startRightWidth;
@@ -88,30 +84,24 @@ export class Playground {
     resizer.addEventListener('mousedown', (e) => {
       e.preventDefault();
       startX = e.clientX;
-      startLeftWidth = left.getBoundingClientRect().width;
-      startRightWidth = right.getBoundingClientRect().width;
+      startLeftWidth = first.getBoundingClientRect().width;
+      startRightWidth = second.getBoundingClientRect().width;
       resizer.classList.add('active');
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
 
       const onMouseMove = (e) => {
         const dx = e.clientX - startX;
-        const minLeft = 240;
-        const minRight = 240;
-        const newLeft = Math.max(minLeft, startLeftWidth + dx);
-        const containerWidth =
-          startLeftWidth + startRightWidth + resizer.getBoundingClientRect().width;
-        const newRight = containerWidth - newLeft - 4;
-        if (newRight < minRight) return;
-        left.style.flex = `0 0 ${newLeft}px`;
-        right.style.flex = `0 0 ${newRight}px`;
+        const minSize = 240;
+        const totalAvailable = startLeftWidth + startRightWidth;
+        const maxLeft = totalAvailable - minSize;
+        const newLeft = Math.min(maxLeft, Math.max(minSize, startLeftWidth + dx));
+        const newRight = totalAvailable - newLeft;
+        first.style.flex = `0 0 ${newLeft}px`;
+        second.style.flex = `0 0 ${newRight}px`;
       };
 
       const onMouseUp = () => {
-        // Store the ratio for window resize
-        const total = body.getBoundingClientRect().width;
-        leftRatio = left.getBoundingClientRect().width / total;
-
         resizer.classList.remove('active');
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
@@ -124,15 +114,16 @@ export class Playground {
     });
 
     resizer.addEventListener('dblclick', () => {
-      left.style.flex = '';
-      right.style.flex = '';
-      leftRatio = null;
+      first.style.flex = '';
+      second.style.flex = '';
     });
   }
 
   _scheduleRender() {
     clearTimeout(this._debounceTimer);
-    this._debounceTimer = setTimeout(() => this._renderOutput(), DEBOUNCE_MS);
+    this._debounceTimer = setTimeout(() => {
+      requestAnimationFrame(() => this._renderOutput());
+    }, DEBOUNCE_MS);
   }
 
   _renderOutput() {
@@ -151,6 +142,11 @@ export class Playground {
   }
 
   _renderJson(raw) {
+    const MAX_JSON_SIZE = 500000;
+    if (raw.length > MAX_JSON_SIZE) {
+      this._output.innerHTML = `<div class="playground-warning">JSON 内容过长（${raw.length.toLocaleString()} 字符），超出 ${MAX_JSON_SIZE.toLocaleString()} 字符限制，请缩减后重试</div>`;
+      return;
+    }
     try {
       const data = JSON.parse(raw);
       this._jsonFormatter.render(data, this._output);
@@ -163,9 +159,19 @@ export class Playground {
   }
 
   _renderMarkdown(raw) {
+    const MAX_RENDER_SIZE = 200000;
     try {
-      const html = marked.parse(raw);
-      this._output.innerHTML = `<div class="markdown-body">${html}</div>`;
+      let content = raw;
+      let truncated = false;
+      if (raw.length > MAX_RENDER_SIZE) {
+        content = raw.substring(0, MAX_RENDER_SIZE);
+        truncated = true;
+      }
+      const html = marked.parse(content);
+      const warning = truncated
+        ? `<div class="playground-warning">内容过长（${raw.length.toLocaleString()} 字符），仅渲染前 ${MAX_RENDER_SIZE.toLocaleString()} 字符</div>`
+        : '';
+      this._output.innerHTML = `${warning}<div class="markdown-body">${html}</div>`;
     } catch (err) {
       this._output.innerHTML = `<div class="playground-error">
         <div class="playground-error-title">Markdown 渲染错误</div>
@@ -176,6 +182,7 @@ export class Playground {
 
   destroy() {
     clearTimeout(this._debounceTimer);
+    this._jsonFormatter._stringStore.clear();
     if (this._pgResizeHandler) {
       window.removeEventListener('resize', this._pgResizeHandler);
       this._pgResizeHandler = null;

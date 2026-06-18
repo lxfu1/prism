@@ -419,6 +419,7 @@ function initSettings() {
   const modal = document.getElementById('settings-modal');
   const btnSettings = document.getElementById('btn-settings');
   const btnSave = document.getElementById('btn-save-settings');
+  const btnCancel = document.getElementById('btn-cancel-settings');
   const formatRadios = document.querySelectorAll('input[name="format"]');
   const chatFields = document.querySelectorAll('.field-chat');
   const promptFields = document.querySelectorAll('.field-prompt');
@@ -443,8 +444,22 @@ function initSettings() {
     modal.classList.remove('hidden');
   });
 
+  function restoreAndClose() {
+    if (_settingsSnapshot) {
+      document.querySelector(`input[name="format"][value="${_settingsSnapshot.format}"]`).checked = true;
+      document.getElementById('set-task-id').value = _settingsSnapshot.task_id_field;
+      document.getElementById('set-messages').value = _settingsSnapshot.messages_field;
+      document.getElementById('set-prompt').value = _settingsSnapshot.prompt_field;
+      document.getElementById('set-result').value = _settingsSnapshot.result_field;
+      showFields(_settingsSnapshot.format);
+    }
+    modal.classList.add('hidden');
+  }
+
+  btnCancel.addEventListener('click', restoreAndClose);
+
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.classList.add('hidden');
+    if (e.target === modal) restoreAndClose();
   });
 
   btnSave.addEventListener('click', () => {
@@ -477,23 +492,7 @@ function initSettings() {
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-      if (_settingsSnapshot) {
-        const cur = {
-          format: document.querySelector('input[name="format"]:checked')?.value,
-          task_id_field: document.getElementById('set-task-id').value.trim(),
-          messages_field: document.getElementById('set-messages').value.trim(),
-          prompt_field: document.getElementById('set-prompt').value.trim(),
-          result_field: document.getElementById('set-result').value.trim(),
-        };
-        const changed =
-          cur.format !== _settingsSnapshot.format ||
-          cur.task_id_field !== _settingsSnapshot.task_id_field ||
-          cur.messages_field !== _settingsSnapshot.messages_field ||
-          cur.prompt_field !== _settingsSnapshot.prompt_field ||
-          cur.result_field !== _settingsSnapshot.result_field;
-        if (changed) return;
-      }
-      modal.classList.add('hidden');
+      restoreAndClose();
     }
   });
 }
@@ -583,7 +582,9 @@ function initPlayground() {
       btn.classList.add('active');
       mainContent.classList.add('hidden');
       panel.classList.remove('hidden');
-      playground.render(panel);
+      // Defer render until after the browser has recalculated layout
+      // (panel was display:none, needs a frame to get correct dimensions)
+      requestAnimationFrame(() => playground.render(panel));
     } else {
       btn.classList.remove('active');
       playground.destroy();

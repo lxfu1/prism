@@ -75,30 +75,23 @@
             </svg>
             <span>Playground</span>
           </button>
-          <button id="btn-settings" title="字段映射设置">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="3.5" cy="5" r="1.5" stroke="currentColor" stroke-width="1.2" />
-              <path d="M5 5h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-              <circle cx="8" cy="8" r="1.5" stroke="currentColor" stroke-width="1.2" />
-              <path
-                d="M2 8h6.5M9.5 8H14"
-                stroke="currentColor"
-                stroke-width="1.2"
-                stroke-linecap="round"
-              />
-              <circle cx="12.5" cy="11" r="1.5" stroke="currentColor" stroke-width="1.2" />
-              <path d="M2 11h9.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          <button id="btn-settings" title="设置 JSONL 字段映射关系">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
           </button>
           <button id="btn-theme" title="切换主题 (T)">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="4" stroke="currentColor" stroke-width="1.2" />
-              <path
-                d="M8 1v2M8 13v2M1 8h2M13 8h2"
-                stroke="currentColor"
-                stroke-width="1.2"
-                stroke-linecap="round"
-              />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
             </svg>
           </button>
         </div>
@@ -255,25 +248,26 @@
 
         <div class="form-group">
           <label for="set-task-id">task_id 字段名</label>
-          <input type="text" id="set-task-id" value="task_id" spellcheck="false" />
+          <input type="text" id="set-task-id" value="task_id" placeholder="task_id" spellcheck="false" />
         </div>
 
         <div class="form-group field-chat">
           <label for="set-messages">messages 字段名</label>
-          <input type="text" id="set-messages" value="messages" spellcheck="false" />
+          <input type="text" id="set-messages" value="messages" placeholder="messages" spellcheck="false" />
         </div>
 
         <div class="form-group field-prompt hidden">
           <label for="set-prompt">prompt 字段名</label>
-          <input type="text" id="set-prompt" value="prompt" spellcheck="false" />
+          <input type="text" id="set-prompt" value="prompt" placeholder="prompt" spellcheck="false" />
         </div>
 
         <div class="form-group field-prompt hidden">
           <label for="set-result">result 字段名</label>
-          <input type="text" id="set-result" value="result" spellcheck="false" />
+          <input type="text" id="set-result" value="result" placeholder="result" spellcheck="false" />
         </div>
 
         <div class="modal-actions">
+          <button id="btn-cancel-settings" class="btn-secondary">取消</button>
           <button id="btn-save-settings" class="btn-primary">保存</button>
         </div>
       </div>
