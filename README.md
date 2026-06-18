@@ -66,7 +66,19 @@ Prism 是一个桌面应用，用于浏览和检查 **JSONL 格式的 AI 训练/
 
 ### 下载预编译版本
 
-前往 [Releases](https://github.com/liufu/prism/releases) 下载对应平台的安装包。
+前往 [Releases](https://github.com/lxfu1/prism/releases) 下载对应平台的安装包。
+
+> **macOS 用户注意**：由于没有 Apple 开发者签名，首次打开可能提示"已损坏，无法打开"。请在终端执行以下命令后重新打开：
+>
+> ```bash
+> xattr -cr /Applications/Prism.app
+> ```
+>
+> 如果尚未安装到 Applications，对下载的 dmg 文件执行：
+>
+> ```bash
+> xattr -cr ~/Downloads/Prism_0.1.0_aarch64.dmg
+> ```
 
 ### 从源码构建
 
