@@ -900,7 +900,7 @@ body.light .json-boolean {
 .markdown-body pre code {
   display: block;
   padding: 14px 16px;
-  background: var(--bg-primary);
+  background: #161b22;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: auto;
