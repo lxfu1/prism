@@ -1,5 +1,15 @@
 import { escapeHtml } from '../utils/escape-html.js';
 
+function _fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+}
+
 export class ChatView {
   render(data, container) {
     this._data = data;
@@ -41,7 +51,10 @@ export class ChatView {
       ${reasoningHtml}
       <div class="chat-content" data-index="${index}" data-full="${isLong ? '1' : '0'}">${escapeHtml(displayContent)}${isLong ? '...' : ''}</div>
       ${isLong ? `<button class="chat-toggle" data-index="${index}">显示全部 (${charCount} chars)</button>` : ''}
-      <div class="chat-meta">${charCount} 字符 · ~${tokenEstimate} tokens</div>
+      <div class="chat-message-footer">
+        <div class="chat-meta">${charCount} 字符 · ~${tokenEstimate} tokens</div>
+        <button class="chat-copy-btn" data-index="${index}">复制</button>
+      </div>
     </div>`;
   }
 
@@ -64,6 +77,28 @@ export class ChatView {
           contentEl.textContent = full;
           contentEl.dataset.expanded = '1';
           btn.textContent = '收起';
+        }
+      });
+    });
+
+    container.querySelectorAll('.chat-copy-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const index = btn.dataset.index;
+        const messages = this._data?.messages;
+        if (!messages?.[index]) return;
+        const text = messages[index].content || '';
+        const onDone = () => {
+          btn.textContent = '已复制';
+          setTimeout(() => { btn.textContent = '复制'; }, 1500);
+        };
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(text).then(onDone).catch(() => {
+            _fallbackCopy(text);
+            onDone();
+          });
+        } else {
+          _fallbackCopy(text);
+          onDone();
         }
       });
     });

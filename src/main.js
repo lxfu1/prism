@@ -31,6 +31,34 @@ const markdownPreview = new MarkdownPreview();
 const playground = new Playground();
 let playgroundActive = false;
 
+function showToast(msg) {
+  let el = document.getElementById('global-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'global-toast';
+    el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.remove('toast-hide');
+  el.classList.add('toast-show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => {
+    el.classList.remove('toast-show');
+    el.classList.add('toast-hide');
+  }, 1500);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+}
+
 // ── File opening ────────────────────────────────────────
 
 async function openFile(path) {
@@ -63,6 +91,17 @@ async function openFile(path) {
     addToHistory(path);
     renderEntryList();
     updateStatusBar();
+
+    document.getElementById('status-errors').textContent = '';
+    invoke('get_file_stats').then((stats) => {
+      const errEl = document.getElementById('status-errors');
+      if (stats.parse_errors > 0) {
+        errEl.textContent = `${stats.parse_errors} 解析错误`;
+        errEl.style.color = 'var(--red)';
+      } else {
+        errEl.textContent = '';
+      }
+    }).catch(() => {});
 
     if (state.entries.length > 0) {
       selectEntry(0);
@@ -132,19 +171,18 @@ async function selectEntry(index) {
       totalEntries: state.entries.length,
     });
   } catch (err) {
-    console.error(
-      'Failed to load entry:',
-      err,
-      'offset:',
-      entry.byte_offset,
-      'length:',
-      entry.byte_length,
-    );
+    console.error('Failed to load entry:', err, 'offset:', entry.byte_offset, 'length:', entry.byte_length);
     const viewEl = activeTab && document.getElementById(`view-${activeTab}`);
     if (viewEl) {
-      viewEl.innerHTML = `<div style="padding:20px;color:#ef4444;font-size:13px;">
-        <div style="font-weight:600;margin-bottom:4px;">加载条目失败</div>
-        <div style="font-size:12px;color:#fca5a5;">${escapeHtml(String(err))}</div>
+      const isParseError = entry.task_id === '[PARSE ERROR]';
+      const rawJson = isParseError ? await invoke('get_entry', {
+        path: state.filePath, offset: entry.byte_offset, length: entry.byte_length,
+      }).catch(() => '') : '';
+      viewEl.innerHTML = `<div class="entry-error-panel">
+        <div class="entry-error-title">${isParseError ? 'JSON 解析错误' : '加载条目失败'}</div>
+        <div class="entry-error-msg">${escapeHtml(String(err))}</div>
+        ${rawJson ? `<div class="entry-error-label">原始内容（第 ${entry.line_number} 行）</div>
+        <pre class="entry-error-raw">${escapeHtml(rawJson)}</pre>` : ''}
       </div>`;
     }
   }
@@ -420,6 +458,7 @@ function initSettings() {
   const btnSettings = document.getElementById('btn-settings');
   const btnSave = document.getElementById('btn-save-settings');
   const btnCancel = document.getElementById('btn-cancel-settings');
+  const btnReset = document.getElementById('btn-reset-settings');
   const formatRadios = document.querySelectorAll('input[name="format"]');
   const chatFields = document.querySelectorAll('.field-chat');
   const promptFields = document.querySelectorAll('.field-prompt');
@@ -457,6 +496,18 @@ function initSettings() {
   }
 
   btnCancel.addEventListener('click', restoreAndClose);
+
+  function applyDefaults() {
+    const d = DEFAULT_MAPPING;
+    document.querySelector(`input[name="format"][value="${d.format}"]`).checked = true;
+    document.getElementById('set-task-id').value = d.task_id_field;
+    document.getElementById('set-messages').value = d.messages_field;
+    document.getElementById('set-prompt').value = d.prompt_field;
+    document.getElementById('set-result').value = d.result_field;
+    showFields(d.format);
+  }
+
+  btnReset.addEventListener('click', applyDefaults);
 
   modal.addEventListener('click', (e) => {
     if (e.target === modal) restoreAndClose();
@@ -575,6 +626,7 @@ function initPlayground() {
   const btn = document.getElementById('btn-playground');
   const panel = document.getElementById('playground-panel');
   const mainContent = document.getElementById('main-content');
+  let rendered = false;
 
   btn.addEventListener('click', () => {
     playgroundActive = !playgroundActive;
@@ -582,12 +634,12 @@ function initPlayground() {
       btn.classList.add('active');
       mainContent.classList.add('hidden');
       panel.classList.remove('hidden');
-      // Defer render until after the browser has recalculated layout
-      // (panel was display:none, needs a frame to get correct dimensions)
-      requestAnimationFrame(() => playground.render(panel));
+      if (!rendered) {
+        requestAnimationFrame(() => playground.render(panel));
+        rendered = true;
+      }
     } else {
       btn.classList.remove('active');
-      playground.destroy();
       panel.classList.add('hidden');
       mainContent.classList.remove('hidden');
     }
@@ -612,6 +664,25 @@ function init() {
 
   document.getElementById('btn-open').addEventListener('click', () => openFile());
   document.getElementById('btn-welcome-open').addEventListener('click', () => openFile());
+  document.getElementById('btn-copy-entry').addEventListener('click', (e) => {
+    if (!state.currentEntry) return;
+    const text = JSON.stringify(state.currentEntry, null, 2);
+    const btn = e.currentTarget;
+    const onSuccess = () => {
+      btn.classList.add('copied');
+      setTimeout(() => btn.classList.remove('copied'), 1500);
+      showToast('已复制到剪贴板');
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(onSuccess).catch(() => {
+        fallbackCopy(text);
+        onSuccess();
+      });
+    } else {
+      fallbackCopy(text);
+      onSuccess();
+    }
+  });
   document.getElementById('btn-prev').addEventListener('click', () => {
     if (state.currentIndex > 0) selectEntry(state.currentIndex - 1);
   });

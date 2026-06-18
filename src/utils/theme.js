@@ -1,7 +1,9 @@
 export function initTheme() {
   const saved = localStorage.getItem('theme');
-  if (saved === 'light') {
-    document.body.classList.remove('dark');
+  if (saved) {
+    document.body.classList.toggle('light', saved === 'light');
+    document.body.classList.toggle('dark', saved !== 'light');
+  } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
     document.body.classList.add('light');
   }
 

@@ -128,6 +128,7 @@ export class MarkdownPreview {
       html += `<span class="html-block-spacer"></span>`;
       html += `<button class="html-nav-btn" data-action="next" title="下一条 (→)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
       html += `<button data-action="copy" data-index="${i}">复制代码</button>`;
+      html += `<button data-action="refresh" data-index="${i}">刷新</button>`;
       html += `<button data-action="fullscreen" data-index="${i}">全屏</button>`;
       html += `</div></div>`;
       html += `<div class="html-preview-slot" id="html-slot-${i}"></div>`;
@@ -284,6 +285,14 @@ export class MarkdownPreview {
             btn.textContent = '已复制!';
             setTimeout(() => (btn.textContent = '复制代码'), 1500);
           });
+          break;
+        }
+        case 'refresh': {
+          const slot = container.querySelector(`#html-slot-${index}`);
+          if (slot) {
+            slot.innerHTML = '';
+            this._showIframePreview(container, block.code, index);
+          }
           break;
         }
         case 'fullscreen': {
