@@ -89,13 +89,18 @@ export class ChatView {
         const text = messages[index].content || '';
         const onDone = () => {
           btn.textContent = '已复制';
-          setTimeout(() => { btn.textContent = '复制'; }, 1500);
+          setTimeout(() => {
+            btn.textContent = '复制';
+          }, 1500);
         };
         if (navigator.clipboard?.writeText) {
-          navigator.clipboard.writeText(text).then(onDone).catch(() => {
-            _fallbackCopy(text);
-            onDone();
-          });
+          navigator.clipboard
+            .writeText(text)
+            .then(onDone)
+            .catch(() => {
+              _fallbackCopy(text);
+              onDone();
+            });
         } else {
           _fallbackCopy(text);
           onDone();

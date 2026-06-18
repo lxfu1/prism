@@ -93,15 +93,17 @@ async function openFile(path) {
     updateStatusBar();
 
     document.getElementById('status-errors').textContent = '';
-    invoke('get_file_stats').then((stats) => {
-      const errEl = document.getElementById('status-errors');
-      if (stats.parse_errors > 0) {
-        errEl.textContent = `${stats.parse_errors} 解析错误`;
-        errEl.style.color = 'var(--red)';
-      } else {
-        errEl.textContent = '';
-      }
-    }).catch(() => {});
+    invoke('get_file_stats')
+      .then((stats) => {
+        const errEl = document.getElementById('status-errors');
+        if (stats.parse_errors > 0) {
+          errEl.textContent = `${stats.parse_errors} 解析错误`;
+          errEl.style.color = 'var(--red)';
+        } else {
+          errEl.textContent = '';
+        }
+      })
+      .catch(() => {});
 
     if (state.entries.length > 0) {
       selectEntry(0);
@@ -171,18 +173,33 @@ async function selectEntry(index) {
       totalEntries: state.entries.length,
     });
   } catch (err) {
-    console.error('Failed to load entry:', err, 'offset:', entry.byte_offset, 'length:', entry.byte_length);
+    console.error(
+      'Failed to load entry:',
+      err,
+      'offset:',
+      entry.byte_offset,
+      'length:',
+      entry.byte_length,
+    );
     const viewEl = activeTab && document.getElementById(`view-${activeTab}`);
     if (viewEl) {
       const isParseError = entry.task_id === '[PARSE ERROR]';
-      const rawJson = isParseError ? await invoke('get_entry', {
-        path: state.filePath, offset: entry.byte_offset, length: entry.byte_length,
-      }).catch(() => '') : '';
+      const rawJson = isParseError
+        ? await invoke('get_entry', {
+            path: state.filePath,
+            offset: entry.byte_offset,
+            length: entry.byte_length,
+          }).catch(() => '')
+        : '';
       viewEl.innerHTML = `<div class="entry-error-panel">
         <div class="entry-error-title">${isParseError ? 'JSON 解析错误' : '加载条目失败'}</div>
         <div class="entry-error-msg">${escapeHtml(String(err))}</div>
-        ${rawJson ? `<div class="entry-error-label">原始内容（第 ${entry.line_number} 行）</div>
-        <pre class="entry-error-raw">${escapeHtml(rawJson)}</pre>` : ''}
+        ${
+          rawJson
+            ? `<div class="entry-error-label">原始内容（第 ${entry.line_number} 行）</div>
+        <pre class="entry-error-raw">${escapeHtml(rawJson)}</pre>`
+            : ''
+        }
       </div>`;
     }
   }
@@ -485,7 +502,8 @@ function initSettings() {
 
   function restoreAndClose() {
     if (_settingsSnapshot) {
-      document.querySelector(`input[name="format"][value="${_settingsSnapshot.format}"]`).checked = true;
+      document.querySelector(`input[name="format"][value="${_settingsSnapshot.format}"]`).checked =
+        true;
       document.getElementById('set-task-id').value = _settingsSnapshot.task_id_field;
       document.getElementById('set-messages').value = _settingsSnapshot.messages_field;
       document.getElementById('set-prompt').value = _settingsSnapshot.prompt_field;
@@ -674,10 +692,13 @@ function init() {
       showToast('已复制到剪贴板');
     };
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(onSuccess).catch(() => {
-        fallbackCopy(text);
-        onSuccess();
-      });
+      navigator.clipboard
+        .writeText(text)
+        .then(onSuccess)
+        .catch(() => {
+          fallbackCopy(text);
+          onSuccess();
+        });
     } else {
       fallbackCopy(text);
       onSuccess();

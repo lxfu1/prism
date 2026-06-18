@@ -24,9 +24,7 @@ export class JsonFormatter {
     if (!charW) return 80;
     const rect = container.getBoundingClientRect();
     const cs = getComputedStyle(container);
-    const contentW = rect.width
-      - parseFloat(cs.paddingLeft)
-      - parseFloat(cs.paddingRight);
+    const contentW = rect.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     return Math.max(40, Math.floor(contentW / charW));
   }
 
@@ -176,7 +174,9 @@ export class JsonFormatter {
         if (stored) {
           navigator.clipboard.writeText(stored.raw).then(() => {
             copyBtn.textContent = '已复制';
-            setTimeout(() => { copyBtn.textContent = '复制'; }, 1500);
+            setTimeout(() => {
+              copyBtn.textContent = '复制';
+            }, 1500);
           });
         }
         return;
@@ -198,7 +198,9 @@ export class JsonFormatter {
               wrap.innerHTML = this._wrapStringLines(stored.full, stored.indent, stored.keyLen, 10);
               expandBtn.textContent = '收起';
               expandBtn.dataset.expanded = '1';
-              requestAnimationFrame(() => wrap.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+              requestAnimationFrame(() =>
+                wrap.scrollIntoView({ block: 'start', behavior: 'smooth' }),
+              );
             }
           }
         }
