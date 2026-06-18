@@ -31,14 +31,16 @@ Prism 是一个桌面应用，用于浏览和检查 **JSONL 格式的 AI 训练/
 | 功能                 | 说明                                                                     |
 | -------------------- | ------------------------------------------------------------------------ |
 | 虚拟滚动             | 数万条记录的流畅浏览，事件委托 + 绝对定位，只渲染可视区域                |
-| 三视图切换           | JSON 树（可折叠 + 长文本展开/收起）/ 对话气泡 / 原始文本                 |
-| Markdown + HTML 预览 | 自动提取 assistant 回答中的 Markdown 和 HTML 代码块，iframe 安全沙箱渲染 |
+| 三视图切换           | JSON 树（可折叠 + 长文本自动换行缩进）/ 对话气泡 / 原始文本             |
+| Markdown + HTML 预览 | 自动提取 assistant 回答中的 Markdown 和 HTML 代码块，iframe 安全沙箱渲染，支持刷新和全屏 |
 | 关键词搜索           | 前端本地过滤 + Rust 后端全量内容深度搜索，结果下拉展示                   |
-| Playground           | 粘贴 JSON / Markdown 实时预览，支持编辑，左右分栏                        |
-| 字段映射             | 支持 `{messages}`（对话）和 `{prompt, result}`（提示词）两种数据格式     |
-| 深色/浅色主题        | 一键切换（T），配置自动保存                                              |
-| 快捷键               | Cmd+O 打开，Cmd+F 搜索，↑↓ 导航条目                                      |
+| Playground           | 粘贴 JSON / Markdown 实时预览，支持编辑，左右分栏，切换后保留状态        |
+| 字段映射             | 支持 `{messages}`（对话）和 `{prompt, result}`（提示词）两种数据格式，可恢复默认     |
+| 深色/浅色主题        | 一键切换（T），首次加载自动跟随系统主题，配置自动保存                     |
+| 一键复制             | JSON 视图复制整条记录，对话视图复制单条消息，长文本复制原始内容           |
+| 快捷键               | Cmd+O 打开，Cmd+F 搜索，↑↓ 导航条目，T 切换主题                          |
 | 拖放打开             | 直接将 .jsonl 文件拖入窗口                                               |
+| 文件统计             | 状态栏展示解析错误数，错误条目点击后显示原始内容和具体错误               |
 
 ## 界面
 
@@ -140,7 +142,8 @@ Prism 支持两种 JSONL 格式，通过**字段映射设置**灵活适配。
 - **JSON 模式**：粘贴 JSON 字符串，使用与主视图相同的树形渲染器展示，含折叠/展开和长文本交互
 - **Markdown 模式**：粘贴 Markdown 文本，实时渲染 GFM（代码高亮、表格、任务列表等）
 - **实时编辑**：输入 300ms 防抖自动刷新，JSON 解析失败时显示具体错误信息
-- **切换关闭**：再次点击按钮回到主视图，状态不保留
+- **大文件保护**：JSON 超 500KB、Markdown 超 200KB 时自动截断并提示
+- **状态保留**：切换回主视图后再打开，内容和 tab 状态保留
 
 ## 开发
 
@@ -171,10 +174,10 @@ prism/
 ├── src/                      # 前端源码
 │   ├── main.js               # 应用入口，状态管理，EventBus
 │   ├── components/
-│   │   ├── json-formatter.js # JSON 树形视图（可折叠 + 长文本展开/收起）
-│   │   ├── chat-view.js      # 对话气泡视图
-│   │   ├── markdown-preview.js # Markdown 渲染 + HTML iframe 预览
-│   │   └── playground.js     # 粘贴 JSON/Markdown 实时预览
+│   │   ├── json-formatter.js # JSON 树形视图（折叠/展开 + 长文本自动换行 + 复制）
+│   │   ├── chat-view.js      # 对话气泡视图（消息复制 + 展开/收起）
+│   │   ├── markdown-preview.js # Markdown 渲染 + HTML iframe 预览（刷新/全屏）
+│   │   └── playground.js     # 粘贴 JSON/Markdown 实时预览（状态保留）
 │   ├── utils/
 │   │   ├── event-bus.js      # 轻量组件通信
 │   │   ├── escape-html.js    # XSS 安全转义（textContent + DOM）
