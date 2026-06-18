@@ -619,8 +619,6 @@ body {
 }
 .json-string {
   color: #86efac;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
 }
 .json-number {
   color: #93c5fd;
