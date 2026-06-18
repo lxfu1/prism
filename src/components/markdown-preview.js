@@ -158,7 +158,7 @@ export class MarkdownPreview {
 
     const iframe = document.createElement('iframe');
     iframe.className = 'html-preview-frame';
-    iframe.sandbox = 'allow-scripts';
+    iframe.sandbox = 'allow-scripts allow-same-origin';
     iframe.srcdoc = code;
     slot.appendChild(iframe);
 
