@@ -156,42 +156,18 @@ export class MarkdownPreview {
       return false;
     }
 
+    const blob = new Blob([code], { type: 'text/html' });
+    const blobUrl = URL.createObjectURL(blob);
+
     const iframe = document.createElement('iframe');
     iframe.className = 'html-preview-frame';
     iframe.sandbox = 'allow-scripts allow-same-origin';
-    iframe.srcdoc = code;
+    iframe.src = blobUrl;
     slot.appendChild(iframe);
 
-    // Catch errors from the iframe (works for same-origin srcdoc scripts)
     iframe.addEventListener('load', () => {
+      URL.revokeObjectURL(blobUrl);
       iframe.classList.add('loaded');
-      try {
-        const win = iframe.contentWindow;
-        if (!win) return;
-        const errors = [];
-        win.addEventListener('error', (ev) => {
-          errors.push({
-            message: ev.message || 'Unknown error',
-            filename: ev.filename || '',
-            lineno: ev.lineno || 0,
-            colno: ev.colno || 0,
-            stack: (ev.error && ev.error.stack) || '',
-          });
-          this._renderIframeErrors(iframe, errors);
-        });
-        win.addEventListener('unhandledrejection', (ev) => {
-          errors.push({
-            message: 'Unhandled rejection: ' + String(ev.reason),
-            filename: '',
-            lineno: 0,
-            colno: 0,
-            stack: (ev.reason && ev.reason.stack) || '',
-          });
-          this._renderIframeErrors(iframe, errors);
-        });
-      } catch {
-        // Cross-origin iframe — can't attach error handlers
-      }
     });
 
     return true;
