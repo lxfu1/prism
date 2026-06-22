@@ -11,7 +11,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="">
-  <img width="3338" alt="image" src="https://github.com/user-attachments/assets/7f97cd89-3fa9-4037-851e-8ce317541158" />
+  <img width="2800" alt="image" src="https://github.com/user-attachments/assets/e83f6cb7-2179-4fac-9092-a5f7f0598159" />
 </picture>
 
 ---
