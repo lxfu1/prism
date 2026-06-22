@@ -344,8 +344,61 @@ function initSearch() {
   searchBox.style.position = 'relative';
   searchBox.appendChild(deepDropdown);
 
+  // Playground search navigation bar (match count + prev/next buttons)
+  const pgNavBar = document.createElement('div');
+  pgNavBar.className = 'playground-search-nav hidden';
+  pgNavBar.innerHTML = `
+    <span class="pg-search-count"></span>
+    <button class="pg-search-prev" title="上一个匹配 (Shift+Enter)">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="pg-search-next" title="下一个匹配 (Enter)">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="pg-search-close" title="关闭搜索 (Esc)">
+      <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  `;
+  searchBox.appendChild(pgNavBar);
+
+  const pgSearchCount = pgNavBar.querySelector('.pg-search-count');
+  const pgSearchPrev = pgNavBar.querySelector('.pg-search-prev');
+  const pgSearchNext = pgNavBar.querySelector('.pg-search-next');
+  const pgSearchClose = pgNavBar.querySelector('.pg-search-close');
+
+  pgSearchPrev.addEventListener('click', () => {
+    playground.navigateMatch(-1);
+    updatePlaygroundSearchNav();
+  });
+  pgSearchNext.addEventListener('click', () => {
+    playground.navigateMatch(1);
+    updatePlaygroundSearchNav();
+  });
+  pgSearchClose.addEventListener('click', () => {
+    playground.clearSearch();
+    input.value = '';
+    pgNavBar.classList.add('hidden');
+    deepDropdown.classList.add('hidden');
+  });
+
+  function updatePlaygroundSearchNav() {
+    const matches = playground._searchMatches;
+    const currentIdx = playground._currentMatchIndex;
+    if (matches.length > 0) {
+      pgSearchCount.textContent = `${currentIdx + 1}/${matches.length}`;
+    } else {
+      pgSearchCount.textContent = '0/0';
+    }
+  }
+
   document.addEventListener('click', (e) => {
-    if (!deepDropdown.contains(e.target) && e.target !== input) {
+    if (!deepDropdown.contains(e.target) && e.target !== input && !pgNavBar.contains(e.target)) {
       deepDropdown.classList.add('hidden');
     }
   });
@@ -353,8 +406,26 @@ function initSearch() {
   input.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
-      const query = input.value.trim().toLowerCase();
-      renderEntryList(query || null);
+      const query = input.value.trim();
+      const queryLower = query.toLowerCase();
+
+      if (playgroundActive) {
+        // Playground mode: search within textarea content
+        playground.clearSearch();
+        deepDropdown.classList.add('hidden');
+
+        if (query) {
+          playground.search(query);
+          pgNavBar.classList.remove('hidden');
+          updatePlaygroundSearchNav();
+        } else {
+          pgNavBar.classList.add('hidden');
+        }
+        return;
+      }
+
+      // Normal mode: search JSONL entries
+      renderEntryList(queryLower || null);
 
       if (
         query &&
@@ -407,6 +478,22 @@ function initSearch() {
         deepDropdown.classList.add('hidden');
       }
     }, 200);
+  });
+
+  // Enter/Shift+Enter to navigate matches in Playground mode
+  input.addEventListener('keydown', (e) => {
+    if (!playgroundActive) return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      playground.navigateMatch(e.shiftKey ? -1 : 1);
+      updatePlaygroundSearchNav();
+    }
+    if (e.key === 'Escape') {
+      playground.clearSearch();
+      input.value = '';
+      pgNavBar.classList.add('hidden');
+      input.blur();
+    }
   });
 }
 
@@ -644,6 +731,7 @@ function initPlayground() {
   const btn = document.getElementById('btn-playground');
   const panel = document.getElementById('playground-panel');
   const mainContent = document.getElementById('main-content');
+  const searchInput = document.getElementById('search-input');
   let rendered = false;
 
   btn.addEventListener('click', () => {
@@ -656,10 +744,25 @@ function initPlayground() {
         requestAnimationFrame(() => playground.render(panel));
         rendered = true;
       }
+      // Switch search to Playground mode
+      searchInput.placeholder = '搜索 Playground 内容 (Cmd+F)';
+      playground.clearSearch();
+      const pgNavBar = searchInput.closest('.search-box').querySelector('.playground-search-nav');
+      if (pgNavBar) pgNavBar.classList.add('hidden');
+      const deepDropdown = document.getElementById('deep-search-results');
+      if (deepDropdown) deepDropdown.classList.add('hidden');
     } else {
       btn.classList.remove('active');
       panel.classList.add('hidden');
       mainContent.classList.remove('hidden');
+      // Switch search back to normal mode
+      searchInput.placeholder = '搜索 (Cmd+F)';
+      playground.clearSearch();
+      const pgNavBar = searchInput.closest('.search-box').querySelector('.playground-search-nav');
+      if (pgNavBar) pgNavBar.classList.add('hidden');
+      // Re-run sidebar filter with current search query
+      const query = searchInput.value.trim().toLowerCase();
+      renderEntryList(query || null);
     }
   });
 }

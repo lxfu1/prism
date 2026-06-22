@@ -409,6 +409,8 @@ body {
   color: var(--text-primary);
   font-size: 12px;
   width: 100%;
+  min-width: 0;
+  flex: 1;
 }
 
 /* Main content */
@@ -1624,7 +1626,7 @@ body.light .markdown-body pre code {
   height: 100%;
   padding: 16px;
   border: none;
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-primary);
   font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 13px;
@@ -1632,6 +1634,7 @@ body.light .markdown-body pre code {
   resize: none;
   outline: none;
   tab-size: 2;
+  z-index: 2;
 }
 
 .playground-input::placeholder {
@@ -1751,4 +1754,103 @@ body.light .markdown-body pre code {
 .toast-hide {
   opacity: 0;
   transform: translateX(-50%) translateY(-20px);
+}
+
+/* Playground search overlay — mirrors textarea for highlight rendering */
+.playground-search-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 2;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  color: transparent;
+  background: var(--bg-primary);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.playground-search-overlay mark {
+  background: rgba(234, 179, 8, 0.35);
+  color: transparent;
+  border-radius: 2px;
+  padding: 1px 0;
+}
+
+.playground-search-overlay mark.current {
+  background: rgba(234, 179, 8, 0.7);
+  outline: 1px solid var(--yellow);
+}
+
+/* Playground output panel search highlights */
+.pg-output-mark {
+  background: rgba(234, 179, 8, 0.35);
+  border-radius: 2px;
+  padding: 1px 0;
+  color: inherit;
+}
+
+.pg-output-mark.current {
+  background: rgba(234, 179, 8, 0.7);
+  outline: 1px solid var(--yellow);
+}
+
+/* Playground search navigation bar — sits inside the search box */
+.playground-search-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  z-index: 10;
+}
+
+.playground-search-nav.hidden {
+  display: none;
+}
+
+.pg-search-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 36px;
+  text-align: center;
+  padding: 0 2px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.pg-search-prev,
+.pg-search-next,
+.pg-search-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pg-search-prev:hover,
+.pg-search-next:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.pg-search-close:hover {
+  background: var(--bg-hover);
+  color: var(--red);
 }

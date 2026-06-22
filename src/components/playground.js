@@ -9,6 +9,8 @@ export class Playground {
     this._mode = 'json';
     this._jsonFormatter = new JsonFormatter();
     this._debounceTimer = null;
+    this._searchMatches = [];
+    this._currentMatchIndex = -1;
   }
 
   render(container) {
@@ -156,6 +158,7 @@ export class Playground {
         <div class="playground-error-msg">${escapeHtml(err.message)}</div>
       </div>`;
     }
+    this._highlightOutputMatches();
   }
 
   _renderMarkdown(raw) {
@@ -178,6 +181,244 @@ export class Playground {
         <div class="playground-error-msg">${escapeHtml(err.message)}</div>
       </div>`;
     }
+    this._highlightOutputMatches();
+  }
+
+  // ── Search ────────────────────────────────────────────
+
+  /**
+   * Search within the Playground textarea content.
+   * Returns { matches: Array<{index, length, text}>, total: number }
+   */
+  search(query) {
+    const raw = this._input ? this._input.value : '';
+    if (!query || !raw) {
+      this._searchMatches = [];
+      this._currentMatchIndex = -1;
+      this._clearHighlights();
+      return { matches: [], total: 0, current: -1 };
+    }
+
+    const queryLower = query.toLowerCase();
+    const rawLower = raw.toLowerCase();
+    this._searchMatches = [];
+
+    let pos = 0;
+    while (pos < rawLower.length) {
+      const idx = rawLower.indexOf(queryLower, pos);
+      if (idx === -1) break;
+      this._searchMatches.push({
+        index: idx,
+        length: query.length,
+        text: raw.substring(idx, idx + query.length),
+      });
+      pos = idx + 1;
+    }
+
+    this._currentMatchIndex = this._searchMatches.length > 0 ? 0 : -1;
+    this._highlightMatches();
+    return {
+      matches: this._searchMatches,
+      total: this._searchMatches.length,
+      current: this._currentMatchIndex,
+    };
+  }
+
+  /**
+   * Navigate to the next/previous search match in the textarea.
+   * Direction: 1 = next, -1 = previous
+   */
+  navigateMatch(direction) {
+    if (this._searchMatches.length === 0) return;
+    this._currentMatchIndex += direction;
+    if (this._currentMatchIndex >= this._searchMatches.length) this._currentMatchIndex = 0;
+    if (this._currentMatchIndex < 0) this._currentMatchIndex = this._searchMatches.length - 1;
+    this._highlightMatches();
+    this._scrollToCurrentMatch();
+    this._updateCurrentOutputMark();
+    return this._currentMatchIndex;
+  }
+
+  /**
+   * Clear all search highlights and reset state.
+   */
+  clearSearch() {
+    this._searchMatches = [];
+    this._currentMatchIndex = -1;
+    this._clearHighlights();
+    this._clearOutputHighlights();
+  }
+
+  /**
+   * Highlight search matches in the output (rendered) panel.
+   * Walks text nodes in the output DOM and wraps matching substrings with <mark>.
+   */
+  _highlightOutputMatches() {
+    if (!this._output || this._searchMatches.length === 0) return;
+
+    const query = this._searchMatches[0]?.text;
+    if (!query) return;
+
+    const queryLower = query.toLowerCase();
+    const outputMarks = this._output.querySelectorAll('.pg-output-mark');
+    outputMarks.forEach((mark) => {
+      const parent = mark.parentNode;
+      parent.replaceChild(document.createTextNode(mark.textContent), mark);
+      parent.normalize();
+    });
+
+    this._outputMarkNodes = [];
+    const walker = document.createTreeWalker(
+      this._output,
+      NodeFilter.SHOW_TEXT,
+      null,
+    );
+    const textNodes = [];
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    for (const node of textNodes) {
+      const text = node.textContent;
+      const textLower = text.toLowerCase();
+      let searchPos = 0;
+
+      const fragments = [];
+      let lastIdx = 0;
+
+      while (searchPos < textLower.length) {
+        const matchIdx = textLower.indexOf(queryLower, searchPos);
+        if (matchIdx === -1) break;
+
+        if (matchIdx > lastIdx) {
+          fragments.push(document.createTextNode(text.substring(lastIdx, matchIdx)));
+        }
+
+        const markEl = document.createElement('mark');
+        markEl.className = 'pg-output-mark';
+        markEl.textContent = text.substring(matchIdx, matchIdx + query.length);
+        fragments.push(markEl);
+        this._outputMarkNodes.push(markEl);
+
+        lastIdx = matchIdx + query.length;
+        searchPos = matchIdx + 1;
+      }
+
+      if (fragments.length > 0) {
+        if (lastIdx < text.length) {
+          fragments.push(document.createTextNode(text.substring(lastIdx)));
+        }
+        const parent = node.parentNode;
+        for (const frag of fragments) {
+          parent.insertBefore(frag, node);
+        }
+        parent.removeChild(node);
+      }
+    }
+
+    // Mark the current match with an extra class
+    if (this._currentMatchIndex >= 0 && this._outputMarkNodes.length > 0) {
+      // Map input matches to output marks — the nth mark in output corresponds to the nth match overall
+      this._updateCurrentOutputMark();
+    }
+  }
+
+  _clearOutputHighlights() {
+    if (!this._output) return;
+    const marks = this._output.querySelectorAll('.pg-output-mark');
+    marks.forEach((mark) => {
+      const parent = mark.parentNode;
+      parent.replaceChild(document.createTextNode(mark.textContent), mark);
+      parent.normalize();
+    });
+    this._outputMarkNodes = [];
+  }
+
+  _updateCurrentOutputMark() {
+    // Remove previous current highlight from all output marks
+    this._outputMarkNodes.forEach((m) => m.classList.remove('current'));
+
+    if (this._currentMatchIndex < 0 || this._outputMarkNodes.length === 0) return;
+
+    // Find the output mark closest to the current match index
+    // Each input match may map to 0, 1, or multiple output marks.
+    // We pick the output mark whose text matches the same occurrence as the current input match.
+    const currentInputMatch = this._searchMatches[this._currentMatchIndex];
+    if (!currentInputMatch) return;
+
+    const matchedTextLower = currentInputMatch.text.toLowerCase();
+    for (const mark of this._outputMarkNodes) {
+      if (mark.textContent.toLowerCase() === matchedTextLower) {
+        mark.classList.add('current');
+        // Scroll output to show this mark
+        mark.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return;
+      }
+    }
+  }
+
+  _highlightMatches() {
+    this._clearHighlights();
+
+    if (this._searchMatches.length === 0 || !this._input) return;
+
+    // Create a mirrored overlay div for visual highlights over the textarea
+    const wrap = this._input.parentElement;
+    let overlay = wrap.querySelector('.playground-search-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'playground-search-overlay';
+      wrap.appendChild(overlay);
+
+      // Sync scroll position from textarea to overlay
+      this._input.addEventListener('scroll', () => {
+        overlay.scrollTop = this._input.scrollTop;
+        overlay.scrollLeft = this._input.scrollLeft;
+      });
+    }
+
+    // Build highlighted HTML from textarea content
+    const raw = this._input.value;
+    let html = '';
+    let lastIdx = 0;
+
+    for (let i = 0; i < this._searchMatches.length; i++) {
+      const match = this._searchMatches[i];
+      html += escapeHtml(raw.substring(lastIdx, match.index));
+      const isCurrent = i === this._currentMatchIndex;
+      html += `<mark class="playground-search-highlight${isCurrent ? ' current' : ''}">${escapeHtml(match.text)}</mark>`;
+      lastIdx = match.index + match.length;
+    }
+    html += escapeHtml(raw.substring(lastIdx));
+
+    overlay.innerHTML = html;
+
+    this._scrollToCurrentMatch();
+    this._highlightOutputMatches();
+  }
+
+  _clearHighlights() {
+    const wrap = this._input ? this._input.parentElement : null;
+    if (!wrap) return;
+    const overlay = wrap.querySelector('.playground-search-overlay');
+    if (overlay) overlay.innerHTML = '';
+  }
+
+  _scrollToCurrentMatch() {
+    if (this._currentMatchIndex < 0 || !this._input) return;
+    const match = this._searchMatches[this._currentMatchIndex];
+
+    // Calculate approximate scroll position based on character index
+    const textBeforeMatch = this._input.value.substring(0, match.index);
+    const linesBeforeMatch = textBeforeMatch.split('\n').length - 1;
+    const lineHeight = parseFloat(getComputedStyle(this._input).lineHeight) || 21;
+    const scrollTop = linesBeforeMatch * lineHeight - this._input.clientHeight / 2;
+
+    this._input.scrollTop = Math.max(0, scrollTop);
+
+    // Also scroll the overlay
+    const overlay = this._input.parentElement.querySelector('.playground-search-overlay');
+    if (overlay) overlay.scrollTop = this._input.scrollTop;
   }
 
   destroy() {
